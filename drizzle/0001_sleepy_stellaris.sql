@@ -1,0 +1,1 @@
+ALTER TABLE `courses` ADD `review_notes` text;

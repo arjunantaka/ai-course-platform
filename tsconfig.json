@@ -1,0 +1,28 @@
+{
+	"extends": "./.svelte-kit/tsconfig.json",
+	"compilerOptions": {
+		"rewriteRelativeImportExtensions": true,
+		"allowJs": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"moduleResolution": "bundler",
+		// Dipakai `bun test`: memetakan $lib/* dan $env/dynamic/private ke berkas nyata
+		// agar modul server bisa diimpor tanpa vite/SvelteKit. SvelteKit memakai path
+		// yang sama saat build, jadi tidak ada perilaku yang berubah untuk aplikasi.
+		"paths": {
+			"$lib": ["./src/lib"],
+			"$lib/*": ["./src/lib/*"],
+			"$env/dynamic/private": ["./tests/unit/helpers/env.ts"]
+		}
+	}
+	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
+	// except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
+	//
+	// If you want to overwrite includes/excludes, make sure to copy over the relevant includes/excludes
+	// from the generated tsconfig.json or remove the extends line above.
+}
