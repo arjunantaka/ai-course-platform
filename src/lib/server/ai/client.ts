@@ -56,10 +56,6 @@ function isRetryableHttp(e: unknown): boolean {
 	return false;
 }
 
-function errorMessage(e: unknown): string {
-	return e instanceof Error ? e.message : String(e);
-}
-
 /** Backoff jaringan: 2s lalu 5s pada percobaan berikutnya. */
 function backoffDelay(attempt: number): Promise<void> {
 	const { promise, resolve } = Promise.withResolvers<void>();
@@ -113,9 +109,9 @@ function extractContent(body: string): string {
 	const trimmed = body.trim();
 	// deteksi SSE longgar: baris data: bisa didahului event:/id: milik producer lain
 	if (!/^data:/m.test(trimmed)) {
-		let data: ChatCompletionFrame;
+		let frame: ChatCompletionFrame;
 		try {
-			data = JSON.parse(trimmed) as ChatCompletionFrame;
+			frame = JSON.parse(trimmed) as ChatCompletionFrame;
 		} catch (cause) {
 			// router kadang menempel data ekor (mis. "data: [DONE]") setelah JSON utuh;
 			// ambil objek JSON pertama yang seimbang lalu parse potongan itu
@@ -125,12 +121,12 @@ function extractContent(body: string): string {
 				throw new Error(`respons bukan JSON: ${trimmed.slice(0, 160)} ... ${trimmed.slice(-60)}`, { cause });
 			}
 			try {
-				data = JSON.parse(trimmed.slice(start, end + 1)) as ChatCompletionFrame;
+				frame = JSON.parse(trimmed.slice(start, end + 1)) as ChatCompletionFrame;
 			} catch (cause2) {
 				throw new Error(`respons bukan JSON: ${trimmed.slice(0, 160)} ... ${trimmed.slice(-60)}`, { cause: cause2 });
 			}
 		}
-		const content = data.choices?.[0]?.message?.content;
+		const content = frame.choices?.[0]?.message?.content;
 		if (!content) throw new Error(`respons model kosong: ${trimmed.slice(0, 200)}`);
 		return content;
 	}
@@ -154,7 +150,7 @@ function extractContent(body: string): string {
 	return content;
 }
 /** Tier model: planner untuk keputusan struktur (outline/review), text untuk materi panjang. */
-export type ModelTier = 'planner' | 'text';
+type ModelTier = 'planner' | 'text';
 
 function resolveModel(tier: ModelTier): string {
 	const model = tier === 'planner' ? env.AI_MODEL_PLANNER : env.AI_MODEL_TEXT;
@@ -204,7 +200,7 @@ export async function chatJson<T>(
 			raw = await complete(messages, useJsonMode, tier);
 			return schema.parse(parseJsonLoose(raw));
 		} catch (e) {
-			const message = errorMessage(e);
+			const message = e instanceof Error ? e.message : String(e);
 			console.warn(`[client] chatJson percobaan ${attempt} gagal: ${message.slice(0, 200)} | raw: ${raw.slice(0, 240) || '(kosong)'}`);
 			if (isUnsupportedResponseFormat(e)) {
 				// provider menolak response_format → ulangi permintaan yang sama tanpa field itu
@@ -248,7 +244,7 @@ export async function chatText(system: string, user: string, tier: ModelTier = '
 				tier
 			);
 		} catch (e) {
-			const message = errorMessage(e);
+			const message = e instanceof Error ? e.message : String(e);
 			if (attempt >= MAX_ATTEMPTS) {
 				throw new Error(`chatText gagal setelah ${MAX_ATTEMPTS} percobaan: ${message}`);
 			}

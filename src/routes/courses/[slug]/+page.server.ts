@@ -15,14 +15,6 @@ export const load: PageServerLoad = async ({ params }) => {
 	);
 	const firstLessonId = tree.modules[0]?.lessons[0]?.id ?? null;
 
-	let tags: string[] = [];
-	try {
-		const parsed: unknown = JSON.parse(course.tags);
-		if (Array.isArray(parsed)) tags = parsed.map(String);
-	} catch {
-		// tags rusak → tampilkan tanpa chip
-	}
-
 	return {
 		course: {
 			slug: course.slug,
@@ -31,7 +23,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			level: course.level,
 			totalLessons: course.totalLessons
 		},
-		tags,
+		tags: course.tags,
 		modules: tree.modules,
 		totalMinutes,
 		firstLessonId

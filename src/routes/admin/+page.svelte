@@ -2,6 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { LEVEL_LABELS, STATUS_LABELS } from '$lib/utils';
 	import type { CourseStatus } from '$lib/server/db/schema';
+	import DeleteModal from '$lib/DeleteModal.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -9,7 +10,7 @@
 	let actionError = $state<string | null>(null);
 	let pendingDelete = $state<{ path: string } | null>(null);
 
-	const STATUS_BADGES: Record<string, string> = {
+	const STATUS_BADGES: Record<CourseStatus, string> = {
 		generating_outline: 'bg-amber-100 text-amber-700',
 		generating_content: 'bg-amber-100 text-amber-700',
 		failed: 'bg-red-100 text-red-700',
@@ -25,7 +26,7 @@
 
 	// polling status tiap 2 detik selama ada baris yang masih di-generate
 	$effect(() => {
-		const generatingIds = data.items
+		const generatingIds = data.courseCards
 			.filter((course) => GENERATING.has(course.status))
 			.map((course) => course.id);
 		if (generatingIds.length === 0) return;
@@ -84,7 +85,7 @@
 	<p class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{actionError}</p>
 {/if}
 
-{#if data.items.length === 0}
+{#if data.courseCards.length === 0}
 	<div class="mt-10 rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center">
 		<p class="font-semibold text-zinc-700">Belum ada kursus. Buat dari topik pertama Anda.</p>
 		<a
@@ -107,23 +108,23 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.items as course (course.id)}
+				{#each data.courseCards as course (course.id)}
 					<tr class="border-b border-zinc-100 last:border-0">
 						<td class="px-4 py-3">
 							<a href={`/admin/${course.id}`} class="font-semibold hover:text-teal-600">
 								{course.title}
 							</a>
 							<div class="text-xs text-zinc-500">
-								{LEVEL_LABELS[course.level] ?? course.level} · {course.moduleCount} modul
+								{LEVEL_LABELS[course.level]} · {course.moduleCount} modul
 							</div>
 						</td>
 						<td class="px-4 py-3">
 							<span
-								class="inline-block rounded-full px-2.5 py-1 text-xs font-semibold {STATUS_BADGES[
+								class="inline-block rounded-md px-2.5 py-1 text-xs font-semibold {STATUS_BADGES[
 									generation[course.id]?.status ?? course.status
-								] ?? 'bg-zinc-100 text-zinc-600'}"
+								]}"
 							>
-								{STATUS_LABELS[generation[course.id]?.status ?? course.status] ?? course.status}
+								{STATUS_LABELS[generation[course.id]?.status ?? course.status]}
 							</span>
 							{#if generation[course.id]?.error}
 								<p class="mt-1 text-xs text-red-600">{generation[course.id].error}</p>
@@ -184,30 +185,13 @@
 	</div>
 {/if}
 
-{#if pendingDelete}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4">
-		<div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-			<h2 class="text-lg font-bold text-zinc-900">Hapus kursus</h2>
-			<p class="mt-2 text-sm text-zinc-600">Semua modul, lesson, dan kuis ikut terhapus.</p>
-			<div class="mt-6 flex justify-end gap-2 text-sm font-semibold">
-				<button
-					onclick={() => (pendingDelete = null)}
-					class="rounded-full border border-zinc-300 px-4 py-2 text-zinc-700 transition-colors hover:border-zinc-500"
-				>
-					Batal
-				</button>
-				<button
-					onclick={async () => {
-						const path = pendingDelete!.path;
-						pendingDelete = null;
-						await callCourseAction(path, 'DELETE');
-					}}
-					disabled={busy !== null}
-					class="rounded-full bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-				>
-					Hapus
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
+<DeleteModal
+	open={pendingDelete !== null}
+	busy={busy !== null}
+	onCancel={() => (pendingDelete = null)}
+	onConfirm={async () => {
+		const path = pendingDelete!.path;
+		pendingDelete = null;
+		await callCourseAction(path, 'DELETE');
+	}}
+/>

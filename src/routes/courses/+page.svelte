@@ -28,7 +28,7 @@
 	</button>
 </form>
 
-{#if data.items.length === 0}
+{#if data.courseCards.length === 0}
 	<p class="mt-10 rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center text-sm text-zinc-500">
 		{#if data.q}
 			Tidak ada kursus cocok dengan &ldquo;{data.q}&rdquo;.
@@ -38,7 +38,7 @@
 	</p>
 {:else}
 	<div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-		{#each data.items as course (course.id)}
+		{#each data.courseCards as course (course.id)}
 			<CourseCard {course} />
 		{/each}
 	</div>

@@ -40,18 +40,18 @@ COURSE_ID=$(echo "$CREATE_RESP" | sed -E 's#.*/admin/([a-f0-9-]+).*#\1#')
 [ -n "$COURSE_ID" ] && [ "$COURSE_ID" != "$CREATE_RESP" ]
 
 # 4a) status awal → generating_* (pipeline aktif)
-ST0=$(curl -s -b /tmp/smc.cookie "$BASE/api/admin/courses/$COURSE_ID/status")
-case "$ST0" in
+STATUS=$(curl -s -b /tmp/smc.cookie "$BASE/api/admin/courses/$COURSE_ID/status")
+case "$STATUS" in
   *'"status":"generating_'*) : ;;
   *'"status":"draft"'*) : ;;
-  *) echo "unexpected status: $ST0"; exit 1 ;;
+  *) echo "unexpected status: $STATUS"; exit 1 ;;
 esac
 
 RUN_FULL=0
 for _ in $(seq 1 120); do
-  S=$(curl -s -b /tmp/smc.cookie "$BASE/api/admin/courses/$COURSE_ID/status" | sed -E 's/.*"status":"([^"]+)".*/\1/')
-  [ "$S" = "draft" ] && { RUN_FULL=1; break; }
-  [ "$S" = "failed" ] && break
+  STATUS=$(curl -s -b /tmp/smc.cookie "$BASE/api/admin/courses/$COURSE_ID/status" | sed -E 's/.*"status":"([^"]+)".*/\1/')
+  [ "$STATUS" = "draft" ] && { RUN_FULL=1; break; }
+  [ "$STATUS" = "failed" ] && break
   sleep 1
 done
 

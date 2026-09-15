@@ -24,7 +24,7 @@
 		<p class="mt-1 line-clamp-2 min-h-10 text-sm text-zinc-500">{course.description}</p>
 		<div class="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
 			<span class="rounded-md bg-teal-50 px-2 py-0.5 font-semibold text-teal-700">
-				{LEVEL_LABELS[course.level] ?? course.level}
+				{LEVEL_LABELS[course.level]}
 			</span>
 			<span>{course.moduleCount} modul · {course.totalLessons} lesson</span>
 			<span class="border-l border-zinc-200 pl-2">{course.totalMinutes} menit</span>

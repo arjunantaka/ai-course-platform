@@ -1,4 +1,4 @@
-import { and, asc, countDistinct, desc, eq, like, or, sql, sum } from 'drizzle-orm';
+import { and, asc, countDistinct, desc, eq, inArray, like, or, sql, sum } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '$lib/server/db';
 import {
@@ -10,7 +10,8 @@ import {
 	type Course,
 	type CourseLevel,
 	type CourseStatus,
-	type QuizQuestion
+	type QuizQuestion,
+	type ReviewNote
 } from '$lib/server/db/schema';
 import { slugify } from '$lib/utils';
 import { startGeneration } from './ai/generate';
@@ -31,7 +32,7 @@ export const CreateCourseInputSchema = z.object({
 			.max(30, 'Maksimal 30 poin pembelajaran')
 	),
 });
-export type CreateCourseData = z.output<typeof CreateCourseInputSchema>;
+type CreateCourseData = z.output<typeof CreateCourseInputSchema>;
 
 // Query bersama (publik + admin)
 
@@ -112,16 +113,30 @@ export async function listCourseCards(
 	});
 }
 
-export async function getPublishedCourseBySlug(slug: string): Promise<Course | null> {
+/** Kolom JSON array → array; array kosong bila kolom null/rusak/bukan array. */
+function parseJsonArray(raw: string | null): unknown[] {
+	try {
+		const parsed: unknown = JSON.parse(raw ?? '[]');
+		return Array.isArray(parsed) ? parsed : [];
+	} catch {
+		return [];
+	}
+}
+
+/** Kursus terbit untuk konsumen: tags sudah di-decode dari kolom JSON. */
+type PublishedCourse = Omit<Course, 'tags'> & { tags: string[] };
+
+export async function getPublishedCourseBySlug(slug: string): Promise<PublishedCourse | null> {
 	const [row] = await db
 		.select()
 		.from(courses)
 		.where(and(eq(courses.slug, slug), eq(courses.status, 'published')))
 		.limit(1);
-	return row ?? null;
+	if (!row) return null;
+	return { ...row, tags: parseJsonArray(row.tags).map(String) };
 }
 
-export type LessonNode = {
+type LessonNode = {
 	id: string;
 	title: string;
 	summary: string;
@@ -141,7 +156,10 @@ export type ModuleNode = {
 	lessons: LessonNode[];
 };
 
-export type CourseTree = { course: Course; modules: ModuleNode[] };
+/** Kursus untuk halaman admin: reviewNotes sudah di-decode dari kolom JSON. */
+type CourseWithNotes = Omit<Course, 'reviewNotes'> & { reviewNotes: ReviewNote[] };
+
+type CourseTree = { course: CourseWithNotes; modules: ModuleNode[] };
 
 export async function getCourseTree(
 	courseId: string,
@@ -179,7 +197,7 @@ export async function getCourseTree(
 	const quizByModule = new Map(quizRows.map((row) => [row.moduleId, row.questions]));
 
 	return {
-		course,
+		course: { ...course, reviewNotes: parseJsonArray(course.reviewNotes) as ReviewNote[] },
 		modules: modRows.map((mod) => {
 			const rawQuiz = quizByModule.get(mod.id);
 			let quizQuestions: QuizQuestion[] | undefined;
@@ -213,7 +231,7 @@ export async function getCourseTree(
 	};
 }
 
-export type FlatLesson = {
+type FlatLesson = {
 	id: string;
 	title: string;
 	readingMinutes: number;
@@ -301,4 +319,88 @@ export async function createCourse(input: CreateCourseData): Promise<string> {
 		points: input.points
 	});
 	return courseId;
+}
+
+// Mutasi + transisi status: kontrak transisi hidup di sini, route API admin tinggal memanggil
+
+/** Status generate satu kursus untuk polling admin. */
+type GenerationStatus = {
+	status: CourseStatus;
+	totalLessons: number;
+	doneLessons: number;
+	error: string | null;
+};
+
+/** Publish kursus: draft/archived/published → published. False bila transisi tidak sah. */
+export async function publishCourse(courseId: string): Promise<boolean> {
+	const now = Date.now();
+	const updated = await db
+		.update(courses)
+		.set({ status: 'published', publishedAt: now, updatedAt: now })
+		.where(
+			and(eq(courses.id, courseId), inArray(courses.status, ['draft', 'archived', 'published']))
+		)
+		.returning({ id: courses.id });
+	return updated.length > 0;
+}
+
+/** Jadikan draft kembali: published → archived, publishedAt dikosongkan. False bila transisi tidak sah. */
+export async function unpublishCourse(courseId: string): Promise<boolean> {
+	const updated = await db
+		.update(courses)
+		.set({ status: 'archived', publishedAt: null, updatedAt: Date.now() })
+		.where(and(eq(courses.id, courseId), eq(courses.status, 'published')))
+		.returning({ id: courses.id });
+	return updated.length > 0;
+}
+
+/** Hapus kursus; FK cascade membersihkan modules → lessons/quizzes. */
+export async function deleteCourse(courseId: string): Promise<void> {
+	await db.delete(courses).where(eq(courses.id, courseId));
+}
+
+/** Status generate untuk polling admin; null bila kursus tidak ada. */
+export async function getGenerationStatus(courseId: string): Promise<GenerationStatus | null> {
+	const [row] = await db
+		.select({
+			status: courses.status,
+			totalLessons: courses.totalLessons,
+			doneLessons: courses.doneLessons,
+			error: courses.error
+		})
+		.from(courses)
+		.where(eq(courses.id, courseId))
+		.limit(1);
+	return row ?? null;
+}
+
+/** Simpan materi lesson; readingMinutes dihitung ulang (sekitar 200 kata per menit). Null bila lesson tidak ada. */
+export async function saveLessonContent(
+	lessonId: string,
+	input: { title?: string; summary?: string; contentMd: string }
+): Promise<{ readingMinutes: number } | null> {
+	const words = input.contentMd.split(/\s+/).filter(Boolean).length;
+	const readingMinutes = Math.max(1, Math.ceil(words / 200));
+	const updated = await db
+		.update(lessons)
+		.set({
+			...(input.title !== undefined ? { title: input.title } : {}),
+			...(input.summary !== undefined ? { summary: input.summary } : {}),
+			contentMd: input.contentMd,
+			readingMinutes
+		})
+		.where(eq(lessons.id, lessonId))
+		.returning({ readingMinutes: lessons.readingMinutes });
+	return updated[0] ?? null;
+}
+
+/** Boot: pulihkan kursus yang terjebak status generate; pipeline lama pasti mati karena restart server. */
+export async function recoverInterruptedGenerations(): Promise<void> {
+	await db.run(sql`
+		UPDATE courses
+		SET status = 'failed',
+		    error = 'Server restart saat generate',
+		    updated_at = ${Date.now()}
+		WHERE status IN ('generating_outline', 'generating_content')
+	`);
 }

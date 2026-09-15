@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 
-export type QuizResult = { score: number; total: number; at: number };
+type QuizResult = { score: number; total: number; at: number };
 
 type CourseProgress = { lessons: string[]; quizzes: Record<string, QuizResult> };
 type ProgressData = Record<string, CourseProgress>;

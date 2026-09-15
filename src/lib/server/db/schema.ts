@@ -1,6 +1,6 @@
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-export const COURSE_STATUSES = [
+const COURSE_STATUSES = [
 	'generating_outline',
 	'generating_content',
 	'failed',
@@ -89,8 +89,5 @@ export const quizzes = sqliteTable('quizzes', {
 });
 
 export type Course = typeof courses.$inferSelect;
-export type Module = typeof modules.$inferSelect;
-export type Lesson = typeof lessons.$inferSelect;
-export type Quiz = typeof quizzes.$inferSelect;
 
 export type ReviewNote = { point: string; reason: string };

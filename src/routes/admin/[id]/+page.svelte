@@ -3,20 +3,19 @@
 	import { marked } from 'marked';
 	import { LEVEL_LABELS, STATUS_LABELS } from '$lib/utils';
 	import type { PageProps } from './$types';
-	import type { CourseStatus, ReviewNote } from '$lib/server/db/schema';
+	import type { CourseStatus } from '$lib/server/db/schema';
+	import DeleteModal from '$lib/DeleteModal.svelte';
 
 	let { data }: PageProps = $props();
 
-	// nilai polling menimpa data load selama pipeline berjalan
-	let pollStatus = $state<string | null>(null);
-	let pollDone = $state<number | null>(null);
-	let pollTotal = $state<number | null>(null);
-	let pollError = $state<string | null | undefined>(undefined);
+	// nilai polling menimpa data load selama pipeline berjalan; null berarti belum polling
+	type PollState = { done: number; total: number; status: CourseStatus; error: string | null };
+	let poll = $state<PollState | null>(null);
 
-	const courseStatus = $derived((pollStatus ?? data.course.status) as CourseStatus);
-	const doneLessons = $derived(pollDone ?? data.course.doneLessons);
-	const totalLessons = $derived(pollTotal ?? data.course.totalLessons);
-	const courseError = $derived(pollError ?? data.course.error);
+	const courseStatus = $derived(poll?.status ?? data.course.status);
+	const doneLessons = $derived(poll?.done ?? data.course.doneLessons);
+	const totalLessons = $derived(poll?.total ?? data.course.totalLessons);
+	const courseError = $derived(poll?.error ?? data.course.error);
 
 	const isGenerating = $derived(
 		courseStatus === 'generating_outline' || courseStatus === 'generating_content'
@@ -29,11 +28,18 @@
 		const timer = setInterval(async () => {
 			const res = await fetch(`/api/admin/courses/${courseId}/status`);
 			if (!res.ok) return;
-			const body = await res.json();
-			pollDone = body.done_lessons;
-			pollTotal = body.total_lessons;
-			pollStatus = body.status;
-			pollError = body.error ?? null;
+			const body = (await res.json()) as {
+				status: CourseStatus;
+				done_lessons: number;
+				total_lessons: number;
+				error: string | null;
+			};
+			poll = {
+				done: body.done_lessons,
+				total: body.total_lessons,
+				status: body.status,
+				error: body.error ?? null
+			};
 			if (body.status !== 'generating_outline' && body.status !== 'generating_content') {
 				clearInterval(timer);
 				await invalidateAll();
@@ -50,10 +56,6 @@
 	let busy = $state<string | null>(null);
 	let actionError = $state<string | null>(null);
 	let pendingDelete = $state<{ path: string } | null>(null);
-
-	function togglePreview(lessonId: string): void {
-		openPreview[lessonId] = !openPreview[lessonId];
-	}
 
 	async function saveLesson(lessonId: string, contentMd: string): Promise<void> {
 		saving[lessonId] = true;
@@ -95,22 +97,8 @@
 		}
 	}
 
-	// konten admin sendiri → preview client-side tanpa sanitize
-	function renderPreview(markdown: string): string {
-		return marked.parse(markdown, { async: false, gfm: true });
-	}
-
 	const pct = $derived(totalLessons > 0 ? Math.round((doneLessons / totalLessons) * 100) : 0);
-
-	const reviewNotes = $derived.by(() => {
-		try {
-			const parsed: unknown = JSON.parse(data.course.reviewNotes ?? '[]');
-			return Array.isArray(parsed) ? (parsed as ReviewNote[]) : [];
-		} catch {
-			// catatan review rusak → tampilkan tanpa panel
-			return [];
-		}
-	});
+	const reviewNotes = $derived(data.course.reviewNotes);
 </script>
 
 <svelte:head>
@@ -121,13 +109,13 @@
 	<div class="min-w-0">
 		<div class="flex items-center gap-3">
 			<h1 class="text-2xl font-extrabold tracking-tight">{data.course.title}</h1>
-			<span class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600">
-				{STATUS_LABELS[courseStatus] ?? courseStatus}
+			<span class="rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600">
+				{STATUS_LABELS[courseStatus]}
 			</span>
 		</div>
 		<p class="mt-1 max-w-2xl text-sm text-zinc-500">{data.course.description}</p>
 		<p class="mt-2 text-xs text-zinc-500">
-			{LEVEL_LABELS[data.course.level] ?? data.course.level} · bahasa {data.course.language}
+			{LEVEL_LABELS[data.course.level]} · bahasa {data.course.language}
 			· dibuat {new Date(data.course.createdAt).toISOString().slice(0, 10)}
 		</p>
 	</div>
@@ -196,9 +184,9 @@
 	</section>
 {:else}
 	<section class="mt-6 flex flex-wrap gap-3 text-xs text-zinc-500">
-		<span class="rounded-full bg-zinc-100 px-3 py-1.5">{data.modules.length} modul</span>
-		<span class="rounded-full bg-zinc-100 px-3 py-1.5">{data.course.totalLessons} lesson</span>
-		<span class="rounded-full bg-zinc-100 px-3 py-1.5">{doneLessons} lesson terisi materi</span>
+		<span class="rounded-md bg-zinc-100 px-3 py-1.5">{data.modules.length} modul</span>
+		<span class="rounded-md bg-zinc-100 px-3 py-1.5">{data.course.totalLessons} lesson</span>
+		<span class="rounded-md bg-zinc-100 px-3 py-1.5">{doneLessons} lesson terisi materi</span>
 	</section>
 
 	{#if reviewNotes.length > 0}
@@ -240,7 +228,7 @@
 
 						<div class="mt-3 flex flex-wrap items-center gap-3">
 							<button
-								onclick={() => togglePreview(lesson.id)}
+								onclick={() => (openPreview[lesson.id] = !openPreview[lesson.id])}
 								class="rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:border-teal-600 hover:text-teal-600"
 							>
 								{openPreview[lesson.id] ? 'Sembunyikan preview' : 'Preview'}
@@ -260,7 +248,7 @@
 						{#if openPreview[lesson.id]}
 							<div class="prose-custom mt-4 max-h-[32rem] overflow-y-auto rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
 								<!-- konten admin sendiri; input tepercaya → tanpa sanitize -->
-								{@html renderPreview(lesson.contentMd ?? '')}
+								{@html marked.parse(lesson.contentMd ?? '', { async: false, gfm: true })}
 							</div>
 						{/if}
 					</div>
@@ -303,30 +291,13 @@
 	</div>
 {/if}
 
-{#if pendingDelete}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4">
-		<div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-			<h2 class="text-lg font-bold text-zinc-900">Hapus kursus</h2>
-			<p class="mt-2 text-sm text-zinc-600">Semua modul, lesson, dan kuis ikut terhapus.</p>
-			<div class="mt-6 flex justify-end gap-2 text-sm font-semibold">
-				<button
-					onclick={() => (pendingDelete = null)}
-					class="rounded-full border border-zinc-300 px-4 py-2 text-zinc-700 transition-colors hover:border-zinc-500"
-				>
-					Batal
-				</button>
-				<button
-					onclick={async () => {
-						const path = pendingDelete!.path;
-						pendingDelete = null;
-						await courseAction(path, 'DELETE');
-					}}
-					disabled={busy !== null}
-					class="rounded-full bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-				>
-					Hapus
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
+<DeleteModal
+	open={pendingDelete !== null}
+	busy={busy !== null}
+	onCancel={() => (pendingDelete = null)}
+	onConfirm={async () => {
+		const path = pendingDelete!.path;
+		pendingDelete = null;
+		await courseAction(path, 'DELETE');
+	}}
+/>

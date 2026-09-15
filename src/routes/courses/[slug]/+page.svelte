@@ -28,11 +28,11 @@
 				<h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl">{data.course.title}</h1>
 				<p class="mt-2 leading-relaxed text-zinc-600">{data.course.description}</p>
 				<div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
-					<span class="rounded-full bg-teal-50 px-2.5 py-1 font-semibold text-teal-700">
-						{LEVEL_LABELS[data.course.level] ?? data.course.level}
+					<span class="rounded-md bg-teal-50 px-2.5 py-1 font-semibold text-teal-700">
+						{LEVEL_LABELS[data.course.level]}
 					</span>
 					{#each data.tags as tag (tag)}
-						<span class="rounded-full border border-teal-200 px-2.5 py-1 font-medium text-teal-700">
+						<span class="rounded-md border border-teal-200 px-2.5 py-1 font-medium text-teal-700">
 							{tag}
 						</span>
 					{/each}

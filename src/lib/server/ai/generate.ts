@@ -5,7 +5,7 @@ import { slugify } from '$lib/utils';
 import { chatJson, chatText } from './client';
 import { OutlineBaseSchema, ReviewedOutlineSchema, QuizSchema } from './schemas';
 
-export type CreateCourseInput = {
+type CreateCourseInput = {
 	topic: string;
 	level: CourseLevel;
 	language: string;

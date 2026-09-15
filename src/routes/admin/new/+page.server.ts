@@ -4,12 +4,12 @@ import { CreateCourseInputSchema, createCourse } from '$lib/server/courses';
 
 export const actions: Actions = {
 	default: async ({ request }) => {
-		const data = await request.formData();
+		const form = await request.formData();
 		const parsed = CreateCourseInputSchema.safeParse({
-			topic: String(data.get('topic') ?? ''),
-			level: String(data.get('level') ?? ''),
-			language: String(data.get('language') ?? '').trim() || undefined,
-			points: String(data.get('points') ?? '')
+			topic: String(form.get('topic') ?? ''),
+			level: String(form.get('level') ?? ''),
+			language: String(form.get('language') ?? '').trim() || undefined,
+			points: String(form.get('points') ?? '')
 				.split('\n')
 				.map((s) => s.trim())
 				.filter(Boolean)

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { eq } from 'drizzle-orm';
 import { resetDatabase } from './helpers/db';
 
 const SAFE_MARKDOWN = [
@@ -95,6 +96,25 @@ async function seedModuleQuiz(
 	});
 }
 
+async function seedModuleLesson(courseId: string, moduleId: string, lessonId: string): Promise<void> {
+	await database.insert(schema.modules).values({
+		id: moduleId,
+		courseId,
+		orderIndex: 0,
+		title: 'Modul',
+		summary: 'ringkasan modul'
+	});
+	await database.insert(schema.lessons).values({
+		id: lessonId,
+		moduleId,
+		orderIndex: 0,
+		title: 'Lesson Awal',
+		summary: 'ringkasan awal',
+		contentMd: SAFE_MARKDOWN,
+		readingMinutes: 1
+	});
+}
+
 describe('listCourseCards search', () => {
 	test('mencocokkan pencarian di dalam JSON tag (scr → javascript)', async () => {
 		await seedCourse('c1', 'kursus-satu', '["javascript","web"]');
@@ -154,5 +174,199 @@ describe('getCourseTree', () => {
 
 		const tree = await courses.getCourseTree('c1', { includeQuizQuestions: true });
 		expect(tree!.modules[0]!.quizQuestions).toHaveLength(1);
+	});
+});
+
+describe('publishCourse / unpublishCourse', () => {
+	test('publish dari draft → published + publishedAt terisi', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+
+		expect(await courses.publishCourse('c1')).toBe(true);
+
+		const [row] = await database
+			.select({ status: schema.courses.status, publishedAt: schema.courses.publishedAt })
+			.from(schema.courses);
+		expect(row?.status).toBe('published');
+		expect(row?.publishedAt).not.toBeNull();
+	});
+
+	test('publish dari published tetap true (idempoten)', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await courses.publishCourse('c1');
+
+		expect(await courses.publishCourse('c1')).toBe(true);
+	});
+
+	test('publish ditolak saat masih generate', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await database
+			.update(schema.courses)
+			.set({ status: 'generating_content' })
+			.where(eq(schema.courses.id, 'c1'));
+
+		expect(await courses.publishCourse('c1')).toBe(false);
+	});
+
+	test('unpublish dari published → archived + publishedAt dikosongkan', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await courses.publishCourse('c1');
+
+		expect(await courses.unpublishCourse('c1')).toBe(true);
+
+		const [row] = await database.select().from(schema.courses);
+		expect(row?.status).toBe('archived');
+		expect(row?.publishedAt).toBeNull();
+	});
+
+	test('unpublish dari draft ditolak', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+
+		expect(await courses.unpublishCourse('c1')).toBe(false);
+	});
+});
+
+describe('deleteCourse', () => {
+	test('menghapus kursus beserta modul/lesson/kuis via cascade', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await seedModuleQuiz('c1', 'm1', quizJson);
+
+		await courses.deleteCourse('c1');
+
+		expect(await database.select().from(schema.courses)).toHaveLength(0);
+		expect(await database.select().from(schema.modules)).toHaveLength(0);
+		expect(await database.select().from(schema.lessons)).toHaveLength(0);
+		expect(await database.select().from(schema.quizzes)).toHaveLength(0);
+	});
+});
+
+describe('getGenerationStatus', () => {
+	test('mengembalikan null untuk kursus yang tidak ada', async () => {
+		expect(await courses.getGenerationStatus('tidak-ada')).toBeNull();
+	});
+
+	test('mengembalikan status + counter progress', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+
+		expect(await courses.getGenerationStatus('c1')).toEqual({
+			status: 'draft',
+			totalLessons: 1,
+			doneLessons: 0,
+			error: null
+		});
+	});
+});
+
+describe('saveLessonContent', () => {
+	test('menghitung readingMinutes dari jumlah kata; title/summary tak disentuh', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await seedModuleLesson('c1', 'm1', 'l1');
+		const content = Array.from({ length: 250 }, (_, i) => `kata${i}`).join(' ');
+
+		const saved = await courses.saveLessonContent('l1', { contentMd: content });
+
+		expect(saved).toEqual({ readingMinutes: 2 });
+		const [row] = await database.select().from(schema.lessons);
+		expect(row?.title).toBe('Lesson Awal');
+		expect(row?.summary).toBe('ringkasan awal');
+		expect(row?.contentMd).toBe(content);
+	});
+
+	test('menyimpan title/summary bila dikirim', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await seedModuleLesson('c1', 'm1', 'l1');
+
+		await courses.saveLessonContent('l1', {
+			title: 'Judul Baru',
+			summary: 'ringkasan baru',
+			contentMd: 'materi'
+		});
+
+		const [row] = await database.select().from(schema.lessons);
+		expect(row?.title).toBe('Judul Baru');
+		expect(row?.summary).toBe('ringkasan baru');
+	});
+
+	test('mengembalikan null bila lesson tidak ada', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+
+		expect(await courses.saveLessonContent('tidak-ada', { contentMd: 'materi' })).toBeNull();
+	});
+});
+
+describe('getPublishedCourseBySlug (decode tags di boundary)', () => {
+	test('mengembalikan tags sebagai array string', async () => {
+		await seedCourse('c1', 'kursus-satu', '["devops","ci"]');
+		await courses.publishCourse('c1');
+
+		const course = await courses.getPublishedCourseBySlug('kursus-satu');
+
+		expect(course?.tags).toEqual(['devops', 'ci']);
+	});
+
+	test('tags rusak → array kosong, bukan error', async () => {
+		await seedCourse('c1', 'kursus-satu', '{rusak');
+		await courses.publishCourse('c1');
+
+		const course = await courses.getPublishedCourseBySlug('kursus-satu');
+
+		expect(course?.tags).toEqual([]);
+	});
+
+	test('null bila kursus belum published', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+
+		expect(await courses.getPublishedCourseBySlug('kursus-satu')).toBeNull();
+	});
+});
+
+describe('getCourseTree (decode reviewNotes di boundary)', () => {
+	test('mengembalikan reviewNotes sebagai ReviewNote[]', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await database
+			.update(schema.courses)
+			.set({ reviewNotes: '[{"point":"p","reason":"r"}]' })
+			.where(eq(schema.courses.id, 'c1'));
+
+		const tree = await courses.getCourseTree('c1');
+
+		expect(tree?.course.reviewNotes).toEqual([{ point: 'p', reason: 'r' }]);
+	});
+
+	test('reviewNotes null/rusak → array kosong', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await database
+			.update(schema.courses)
+			.set({ reviewNotes: '{rusak' })
+			.where(eq(schema.courses.id, 'c1'));
+
+		const tree = await courses.getCourseTree('c1');
+
+		expect(tree?.course.reviewNotes).toEqual([]);
+	});
+});
+
+describe('recoverInterruptedGenerations', () => {
+	test('kursus terjebak generate → failed dengan pesan restart; kursus lain tak tersentuh', async () => {
+		await seedCourse('c1', 'kursus-satu', '[]');
+		await seedCourse('c2', 'kursus-dua', '[]');
+		await database
+			.update(schema.courses)
+			.set({ status: 'generating_content' })
+			.where(eq(schema.courses.id, 'c1'));
+		await courses.publishCourse('c2');
+
+		await courses.recoverInterruptedGenerations();
+
+		const [recovered] = await database
+			.select()
+			.from(schema.courses)
+			.where(eq(schema.courses.id, 'c1'));
+		expect(recovered?.status).toBe('failed');
+		expect(recovered?.error).toBe('Server restart saat generate');
+		const [untouched] = await database
+			.select()
+			.from(schema.courses)
+			.where(eq(schema.courses.id, 'c2'));
+		expect(untouched?.status).toBe('published');
 	});
 });

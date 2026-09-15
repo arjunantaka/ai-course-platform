@@ -57,7 +57,7 @@ Kursus muncul di beranda dan katalog setelah statusnya `published`.
 |---|---|
 | `bun run dev` | Dev server (Vite) |
 | `bun run build` | Build produksi (adapter-node, output `build/`) |
-| `bun run start` | Jalankan hasil build (pakai `HOST`/`ORIGIN` dari env) |
+| `bun run start` | Jalankan hasil build (HOST tetap `127.0.0.1`, ORIGIN mengikuti `PORT`) |
 | `bun run check` | svelte-check + sinkronisasi tipe |
 | `bun run db:generate` | Generate migrasi Drizzle dari schema |
 

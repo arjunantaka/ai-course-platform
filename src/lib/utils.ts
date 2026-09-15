@@ -1,3 +1,5 @@
+import type { CourseLevel, CourseStatus } from '$lib/server/db/schema';
+
 /** Slug URL dari judul: lowercase, non-alfanumerik → '-', plus suffix acak 6 char base36. */
 export function slugify(title: string): string {
 	const base =
@@ -30,13 +32,13 @@ export function titleInitials(title: string): string {
 	return (words[0]![0]! + words[1]![0]!).toUpperCase();
 }
 
-export const LEVEL_LABELS: Record<string, string> = {
+export const LEVEL_LABELS: Record<CourseLevel, string> = {
 	beginner: 'Pemula',
 	intermediate: 'Menengah',
 	advanced: 'Lanjutan'
 };
 
-export const STATUS_LABELS: Record<string, string> = {
+export const STATUS_LABELS: Record<CourseStatus, string> = {
 	generating_outline: 'Menyusun outline',
 	generating_content: 'Generate materi',
 	failed: 'Gagal',

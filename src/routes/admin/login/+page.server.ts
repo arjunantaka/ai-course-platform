@@ -11,8 +11,8 @@ export const load: PageServerLoad = async ({ cookies }) => {
 
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
-		const data = await request.formData();
-		const token = String(data.get('token') ?? '');
+		const form = await request.formData();
+		const token = String(form.get('token') ?? '');
 		if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
 			return fail(400, { wrong: true });
 		}

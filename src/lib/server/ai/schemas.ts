@@ -27,14 +27,11 @@ export const OutlineBaseSchema = z.object({
 		.max(8)
 });
 
-export type Outline = z.infer<typeof OutlineBaseSchema>;
-
 export const ReviewedOutlineSchema = OutlineBaseSchema.extend({
 	dropped: z
 		.array(z.object({ point: z.string().min(1), reason: z.string().min(1) }))
 		.max(30)
 });
-export type ReviewedOutline = z.infer<typeof ReviewedOutlineSchema>;
 
 export const QuizSchema = z.object({
 	questions: z
@@ -48,5 +45,3 @@ export const QuizSchema = z.object({
 		)
 		.length(5)
 });
-
-export type Quiz = z.infer<typeof QuizSchema>;
