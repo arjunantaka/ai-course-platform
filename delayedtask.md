@@ -43,33 +43,36 @@ Legenda: `[x]` selesai, `[~]` berjalan/rebuild, `[ ]` belum.
 | `tests/unit/courses.test.ts` | [x] | 7/7 pass. |
 | tsconfig paths (`$lib`, `$env/dynamic/private`) | [x] | untuk `bun test`; cek svelte-check 0/0 setelahnya. |
 | `package.json` scripts `test`/`test:unit`/`smoke` | [x] | |
-| `scripts/smoke.sh` | [ ] | Belum ditulis. |
+| `scripts/smoke.sh` | [x] | Ditulis + jalur non-generate diverifikasi (auth, CSRF login, create→303, status awal, 409 invalid_status, delete→404). Bagian draft→publish→render→quiz butuh model real (mock dihapus). |
 
-## Root cause kegagalan test (aktif)
+## Root cause kegagalan test (sudah ditangani)
 
-1. **Mock poisoning antar-file** (`markdown.test.ts` 4 fail): `courses.test.ts`
-   memanggil `mock.module('$lib/server/ai/generate', ...)` yang menimpa `_testable`
-   untuk seluruh proses bun test. Fix: jalankan `mock.module` hanya di dalam
-   describe miliknya / batasi cakupan, atau gunakan file test terpisah, atau
-   `mock.restore()` per suite dan jangan mock `_testable` di courses (mock hanya
-   `startGeneration`).
+1. **Mock poisoning antar-file** — fix: hapus `mock.module('$lib/server/ai/generate', ...)` di
+   `courses.test.ts` (test tak memanggil createCourse/startGeneration).
+2. **Client retry timeout** — akar masalah NYATA: `isRetryableHttp` mengklasifikasikan error
+   JSON/Zod (Error polos) sebagai retryable → branch koreksi follow-up Step 5 tak pernah
+   tercapai. Fix: perkenalkan `NetworkError` (dilempar `postViaChildProcess` saat status 0);
+   `isRetryableHttp` kini hanya true untuk NetworkError / HTTP 429 / 5xx. Follow-up kini aktif.
+   `bun test tests/unit` → 19 pass, exit 0.
 
-2. **Client retry timeout 5s**: `chatJson` retry memanggil `backoffDelay` (2s) di
-   jalur retryable sebelum parsing? Tidak: raw malformed → parse throw → bukan
-   HTTP error → masuk branch follow-up (tanpa backoff). Dugaan: respons kedua
-   `{"ok": "salah"}` lolos `OkSchema` (boolean? `"salah"` bukan boolean → gagal
-   validasi → loop lagi → respons ketiga = ulang terakhir `{"ok": "salah"}`,
-   gagal → MAX_ATTEMPTS → throw; tapi 6× tanpa backoff cepat, bukan 5s timeout).
-   Perlu inspeksi: kemungkinan `stubProvider` return `ok:false` (status 200 di
-   branch kedua dipakai; index melewati array → `responses[-1]` undefined).
-   Fix: beri 6+ respons atau buat skema yang lolos, dan pastikan stub tak
-   mengembalikan undefined.
+## Perubahan eksternal (agent lain, repo sama)
+
+- **Agent `pi` (Orca) menghapus provider `mock`** dari codebase: `src/lib/server/ai/mock.ts`
+  tak ada, `client.ts` tak lagi punya branch `if (provider === 'mock')` / `AI_PROVIDER` env.
+  Pipeline kini selalu openai real via `postViaChildProcess`. Perubahan ini KOMIT di baseline
+  (working tree pi menimpa sebelum git init), jadi `git status` bersih saat ini.
+- Akibat: `scripts/smoke.sh` tak bisa memakai `AI_PROVIDER=mock`; verifikasi penuh butuh
+  kredensial model real. E2E provider-real sedang dikerjakan pi (task `task_f4c5b60d538b`).
+- Koordinasi terkirim via `orca orchestration send` (request ID `03884a43-...`).
 
 ## Langkah berikut
 
-1. Perbaiki 2 kegagalan test di atas (mock poisoning + retry stub) sampai
-   `bun test tests/unit` → all pass.
-2. Jalankan Step 13 audit (re-read, konfirmasi no-edit).
-3. Re-run `svelte-check` → 0/0 (validasi tsconfig paths tak merusak jenis).
-4. Tulis `scripts/smoke.sh`, `chmod +x`, jalankan → `smoke OK`.
-5. Commit akhir; ringkas verifikasi 4 poin di turn penutup.
+1. [x] Perbaiki 2 kegagalan test → `bun test tests/unit` = 19 pass, exit 0.
+2. [x] Step 13 audit → konfirmasi no-edit (semua prop-derived sudah `$derived`).
+3. [x] `svelte-check` → 0 errors / 0 warnings (dengan tsconfig `paths` utk bun test).
+4. [x] Tulis `scripts/smoke.sh` (ORIGIN fix untuk CSRF + jalur adaptif) + verifikasi jalur
+       non-generate: auth gate 303, login fail `status:400`, cookie, create→303, status awal
+       `generating_outline`, 409 `{code:'invalid_status'}`, delete→404.
+5. [ ] Jalur render/quiz smoke → terblokir karena mock dihapus; butuh model real.
+       Tumpang tindih dengan e2e real pi. Diserahkan ke pi.
+6. [~] Commit akhir + laporan verifikasi (turn ini).
