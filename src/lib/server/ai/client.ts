@@ -26,6 +26,9 @@ class ProviderHttpError extends Error {
 	}
 }
 
+/** Gagal jaringan dari postViaChildProcess (status 0): layak dicoba ulang. */
+class NetworkError extends Error {}
+
 function requireOpenAiEnv(): { baseUrl: string; apiKey: string } {
 	if (!env.AI_BASE_URL || !env.AI_API_KEY) {
 		throw new Error(
@@ -44,12 +47,13 @@ function isHardHttpError(e: unknown): boolean {
 	return e instanceof ProviderHttpError && e.status !== 429 && e.status < 500;
 }
 
-/** 5xx / 429 / kegagalan jaringan atau timeout: layak dicoba ulang. */
+/** Gagal jaringan atau 5xx/429: layak dicoba ulang. Error lain (JSON/Zod) bukan. */
 function isRetryableHttp(e: unknown): boolean {
+	if (e instanceof NetworkError) return true;
 	if (e instanceof ProviderHttpError) {
 		return e.status === 429 || e.status >= 500;
 	}
-	return e instanceof Error;
+	return false;
 }
 
 function errorMessage(e: unknown): string {
@@ -175,7 +179,7 @@ async function complete(messages: Msg[], jsonMode: boolean, tier: ModelTier): Pr
 		body,
 		TIMEOUT_MS
 	);
-	if (result.status === 0) throw new Error(result.body);
+	if (result.status === 0) throw new NetworkError(result.body);
 	if (!result.ok) throw new ProviderHttpError(result.status, result.body);
 	return extractContent(result.body);
 }

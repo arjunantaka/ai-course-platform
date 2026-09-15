@@ -87,14 +87,14 @@ describe('chatJson retry', () => {
 		const fencedMalformed = '```json\n{"ok": "salah", "n": }\n```';
 		captured = stubProvider([
 			{ status: 200, body: chatCompletion(fencedMalformed) },
-			{ status: 200, body: chatCompletion('{"ok": "salah"}') }
+			{ status: 200, body: chatCompletion('{"ok": true}') }
 		]);
 		const { chatJson: runAgain, _testable: _t } = await import('../../src/lib/server/ai/client');
 		expect(_t).toBeDefined();
 
 		const result = await runAgain('sys', 'user', OkSchema);
 
-		expect(result).toEqual({ ok: 'salah' });
+		expect(result).toEqual({ ok: true });
 		expect(captured.length).toBe(2);
 		const secondMessages = JSON.parse(captured[1]!.body).messages as Array<{
 			role: string;

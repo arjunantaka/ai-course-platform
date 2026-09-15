@@ -37,13 +37,11 @@ let schema: typeof import('../../src/lib/server/db/schema');
 
 beforeEach(async () => {
 	resetDatabase();
-	// mock lintas-modul: server/db diarahkan ke DB sementara, startGeneration dilumpuhkan
+	// mock lintas-modul: server/db diarahkan ke DB sementara. generate.ts TIDAK
+	// di-mock agar _testable.validateLessonMarkdown di markdown.test.ts tetap asli;
+	// test di sini tidak memanggil createCourse/startGeneration.
 	const testDb = await import('./helpers/db');
 	mock.module('$lib/server/db', () => ({ db: testDb.db }));
-	mock.module('$lib/server/ai/generate', () => ({
-		startGeneration: () => {},
-		_testable: { validateLessonMarkdown: () => [] }
-	}));
 	courses = await import('../../src/lib/server/courses');
 	database = (await import('../../src/lib/server/db')).db;
 	schema = await import('../../src/lib/server/db/schema');
