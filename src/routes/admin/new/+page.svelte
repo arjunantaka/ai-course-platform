@@ -6,14 +6,14 @@
 	let submitting = $state(false);
 
 	const inputClass =
-		'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20';
+		'w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-100';
 </script>
 
 <svelte:head>
 	<title>Kursus Baru · KrasCourse</title>
 </svelte:head>
 
-<h1 class="text-2xl font-extrabold tracking-tight">Kursus Baru</h1>
+<h1 class="text-2xl font-extrabold tracking-tight text-zinc-900">Kursus Baru</h1>
 <p class="mt-1 max-w-2xl text-sm text-zinc-500">
 	Masukkan topik dan poin pembelajaran. AI mengelompokkan poin menjadi modul, me-review
 	dan memangkas yang kurang relevan, lalu menulis materi tiap lesson satu per satu dan
@@ -33,7 +33,7 @@
 	}}
 >
 	<div>
-		<label for="topic" class="mb-1 block text-sm font-medium text-zinc-700">Topik kursus</label>
+		<label for="topic" class="mb-1 block text-sm font-semibold text-zinc-700">Topik kursus</label>
 		<textarea
 			id="topic"
 			name="topic"
@@ -48,7 +48,7 @@
 
 	<div class="grid gap-5 sm:grid-cols-2">
 		<div>
-			<label for="level" class="mb-1 block text-sm font-medium text-zinc-700">Level</label>
+			<label for="level" class="mb-1 block text-sm font-semibold text-zinc-700">Level</label>
 			<select id="level" name="level" class={inputClass} value="beginner">
 				<option value="beginner">Pemula</option>
 				<option value="intermediate">Menengah</option>
@@ -56,13 +56,13 @@
 			</select>
 		</div>
 		<div>
-			<label for="language" class="mb-1 block text-sm font-medium text-zinc-700">Bahasa konten</label>
+			<label for="language" class="mb-1 block text-sm font-semibold text-zinc-700">Bahasa konten</label>
 			<input id="language" name="language" value="id" placeholder="id / en" class={inputClass} />
 		</div>
 	</div>
 
 	<div>
-		<label for="points" class="mb-1 block text-sm font-medium text-zinc-700">Poin pembelajaran</label>
+		<label for="points" class="mb-1 block text-sm font-semibold text-zinc-700">Poin pembelajaran</label>
 		<textarea
 			id="points"
 			name="points"
@@ -85,7 +85,7 @@
 	<button
 		type="submit"
 		disabled={submitting}
-		class="rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+		class="inline-flex items-center justify-center rounded-lg bg-teal-700 min-h-[44px] px-5 text-sm font-bold text-white transition-colors hover:bg-teal-800 disabled:opacity-50"
 	>
 		{submitting ? 'Membuat kursus…' : 'Generate kursus'}
 	</button>
