@@ -48,79 +48,85 @@
 </svelte:head>
 
 <div class="mx-auto max-w-2xl">
-	<nav class="text-xs text-zinc-500">
-		<a href={`/courses/${data.course.slug}`} class="hover:text-teal-600">{data.course.title}</a>
-		<span aria-hidden="true"> / </span>
-		<span>Kuis modul</span>
-	</nav>
-
 	{#if finished}
-		<section class="mt-6 rounded-2xl border border-zinc-200 bg-white p-10 text-center">
-			<p class="text-sm font-medium text-zinc-500">Skor akhir</p>
-			<p class="mt-2 text-5xl font-extrabold tabular-nums text-teal-600">
-				{score}<span class="text-2xl text-zinc-500">/{data.questions.length}</span>
-			</p>
-			<p class="mt-3 text-sm text-zinc-500">
-				{score === data.questions.length
-					? 'Sempurna. Semua jawaban benar.'
-					: score >= Math.ceil(data.questions.length / 2)
-						? 'Kerja bagus. Ulangi untuk skor lebih baik.'
-						: 'Belum lulus. Pelajari kembali materinya, lalu ulangi.'}
-			</p>
-			<p class="mt-1 text-xs text-zinc-500">Skor tersimpan di perangkat Anda.</p>
+		<div class="mt-8 grid items-center gap-7 md:grid-cols-2">
+			<div
+				class="board rounded-md border-[9px] border-[color:var(--color-frame)] p-8 shadow-[0_24px_48px_-24px_rgba(22,49,41,0.45)]"
+			>
+				<p class="font-mono text-[10.5px] tracking-widest text-chalk-dim">NILAI</p>
+				<p class="mt-2 text-6xl font-extrabold tracking-tight text-chalk tabular-nums sm:text-7xl">
+					{score}<span class="text-3xl font-bold text-chalk-dim">/{data.questions.length}</span>
+				</p>
+				<p class="mt-3 text-[13.5px] text-chalk-dim">
+					Kerja bagus. Skor tersimpan di perangkat Anda.
+				</p>
+			</div>
 
-			<div class="mt-8 flex flex-wrap justify-center gap-3">
+			<div class="flex flex-col items-start gap-3">
+				<p class="text-sm text-zinc-500">
+					Ulangi kuis kapan saja untuk skor lebih baik, atau lanjut ke modul berikutnya.
+				</p>
 				<button
 					onclick={restart}
-					class="rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 active:-translate-y-px"
+					class="inline-flex min-h-[46px] items-center justify-center rounded-lg bg-teal-700 px-6 text-sm font-bold text-white transition-colors duration-150 hover:bg-teal-800"
 				>
 					Ulangi kuis
 				</button>
 				<a
 					href={`/courses/${data.course.slug}`}
-					class="rounded-full border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-700 transition-colors hover:border-teal-600 hover:text-teal-600"
+					class="inline-flex min-h-[46px] items-center justify-center rounded-lg border border-zinc-300 px-5 text-sm font-bold text-zinc-500 transition-colors duration-150 hover:border-teal-700 hover:text-teal-700"
 				>
 					Kembali ke kursus
 				</a>
 			</div>
-		</section>
+		</div>
 	{:else}
-		<section class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
-			<div class="flex items-center justify-between text-xs text-zinc-500">
-				<span class="font-semibold tabular-nums text-teal-600">Soal {index + 1} / {data.questions.length}</span>
-				<div class="h-1.5 w-32 overflow-hidden rounded-full bg-zinc-100">
-					<div
-						class="h-full rounded-full bg-teal-600 transition-all duration-300"
-						style={`width: ${(index / data.questions.length) * 100}%`}
-					></div>
-				</div>
+		<!-- kop lembar ujian -->
+		<div class="flex flex-wrap items-center justify-between gap-4 border-b-2 border-zinc-900 py-4">
+			<div>
+				<p class="text-lg font-extrabold tracking-tight text-zinc-900">Kuis {data.module.title}</p>
+				<span class="font-mono text-[11px] text-zinc-500">{data.course.title}</span>
 			</div>
+			<div class="flex gap-1.5" aria-label="Soal {index + 1} dari {data.questions.length}">
+				{#each data.questions as _, qi (qi)}
+					<span
+						class="h-[13px] w-[13px] rounded-sm border-[1.5px] {qi <= index
+							? 'border-teal-700 bg-teal-700'
+							: 'border-zinc-300 bg-white'}"
+					></span>
+				{/each}
+			</div>
+		</div>
 
-			<h1 class="mt-4 text-lg font-bold leading-relaxed text-zinc-900">{question.question}</h1>
+		<div class="mt-7">
+			<p class="font-mono text-[11px] font-bold text-teal-700">SOAL {index + 1}</p>
+			<h3 class="mt-2 text-lg font-bold leading-snug text-zinc-900">{question.question}</h3>
 
-			<div class="mt-5 space-y-2.5">
+			<div class="mt-5 grid gap-2.5">
 				{#each question.options as option, oi (oi)}
 					{@const isCorrect = revealed && oi === question.answer_index}
 					{@const isWrongPick = revealed && selected === oi && oi !== question.answer_index}
 					<button
 						onclick={() => selectOption(oi)}
 						disabled={revealed}
-						class="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition {isCorrect
-							? 'border-teal-600 bg-teal-50 font-semibold text-teal-800'
+						class="grid min-h-[46px] w-full grid-cols-[28px_1fr] items-center gap-3.5 rounded-lg border-[1.5px] px-4 py-3.5 text-left text-[14.5px] transition-colors duration-150 {isCorrect
+							? 'border-teal-700 bg-teal-50 font-semibold text-teal-700'
 							: isWrongPick
-								? 'border-red-400 bg-red-50 text-red-700'
-								: selected === oi
-									? 'border-teal-600 bg-teal-50/60 text-zinc-800'
-									: 'border-zinc-200 bg-white text-zinc-700 hover:border-teal-600 active:-translate-y-px'} disabled:cursor-default disabled:active:translate-y-0"
+								? 'border-red-200 bg-red-50 text-zinc-700'
+								: revealed
+									? 'border-zinc-200 bg-white text-zinc-700 opacity-55'
+									: selected === oi
+										? 'border-teal-700 bg-white text-zinc-700'
+										: 'border-zinc-200 bg-white text-zinc-700 hover:border-teal-700'} disabled:cursor-default"
 					>
 						<span
-							class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold {isCorrect
-								? 'bg-teal-600 text-white'
+							class="flex h-7 w-7 items-center justify-center rounded-lg border-[1.5px] font-mono text-xs font-bold {isCorrect
+								? 'border-teal-700 bg-teal-700 text-white'
 								: isWrongPick
-									? 'bg-red-500 text-white'
-									: 'bg-zinc-100 text-zinc-500'}"
+									? 'border-red-700 text-red-700'
+									: 'border-zinc-300 text-zinc-500'}"
 						>
-							{isCorrect ? '✓' : isWrongPick ? '✕' : String.fromCharCode(65 + oi)}
+							{isCorrect ? '✓' : String.fromCharCode(65 + oi)}
 						</span>
 						<span>{option}</span>
 					</button>
@@ -128,27 +134,25 @@
 			</div>
 
 			{#if revealed}
-				<div class="mt-5 rounded-2xl border border-teal-200 bg-teal-50/60 p-4 text-sm">
-					<p class="font-semibold {selected === question.answer_index ? 'text-teal-700' : 'text-red-600'}">
-						{selected === question.answer_index ? 'Benar.' : 'Kurang tepat.'}
-					</p>
-					<p class="mt-1 leading-relaxed text-zinc-600">{question.explanation}</p>
+				<div class="mt-4 rounded-lg border border-teal-200 bg-teal-50 p-4">
+					<p class="font-mono text-[10px] font-bold tracking-widest text-teal-700">PEMBAHASAN</p>
+					<p class="mt-1 text-sm text-zinc-600">{question.explanation}</p>
 				</div>
 				<button
 					onclick={nextQuestion}
-					class="mt-5 w-full rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 active:-translate-y-px"
+					class="mt-5 inline-flex min-h-[46px] w-full items-center justify-center rounded-lg bg-teal-700 px-6 text-sm font-bold text-white transition-colors duration-150 hover:bg-teal-800"
 				>
-					{isLast ? 'Lihat hasil →' : 'Soal berikutnya →'}
+					{isLast ? 'Lihat hasil' : 'Soal berikutnya'}
 				</button>
 			{:else}
 				<button
 					onclick={checkAnswer}
 					disabled={selected === null}
-					class="mt-5 w-full rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 active:-translate-y-px disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:active:translate-y-0"
+					class="mt-5 inline-flex min-h-[46px] w-full items-center justify-center rounded-lg bg-teal-700 px-6 text-sm font-bold text-white transition-colors duration-150 hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
 				>
 					Periksa jawaban
 				</button>
 			{/if}
-		</section>
+		</div>
 	{/if}
 </div>
