@@ -31,9 +31,15 @@
 			.map((course) => course.id);
 		if (generatingIds.length === 0) return;
 
-		const timers = generatingIds.map((id) =>
-			setInterval(async () => {
+		const timers = generatingIds.map((id) => {
+			const timer = setInterval(async () => {
 				const res = await fetch(`/api/admin/courses/${id}/status`);
+				if (res.status === 404) {
+					// kursus dihapus di tempat lain: berhenti mem-poll baris ini
+					clearInterval(timer);
+					await invalidateAll();
+					return;
+				}
 				if (!res.ok) return;
 				const body = await res.json();
 				generation[id] = {
@@ -43,10 +49,13 @@
 					error: body.error ?? null
 				};
 				if (body.status !== 'generating_outline' && body.status !== 'generating_content') {
+					// status terminal: hentikan polling baris ini sebelum refresh data
+					clearInterval(timer);
 					await invalidateAll();
 				}
-			}, 2000)
-		);
+			}, 2000);
+			return timer;
+		});
 		return () => timers.forEach(clearInterval);
 	});
 

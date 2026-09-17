@@ -24,16 +24,8 @@ function load(): ProgressData {
  * Satu-satunya sumber kebenaran progress belajar (client-side, localStorage).
  * Tidak ada akun di MVP → progress tidak pernah dikirim ke server.
  */
-let initialized = false;
-
 class ProgressStore {
-	data = $state<ProgressData>({});
-
-	constructor() {
-		if (initialized) throw new Error('ProgressStore: gunakan export const progress');
-		initialized = true;
-		this.data = load();
-	}
+	data = $state<ProgressData>(load());
 
 	#persist(): void {
 		if (browser) localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
