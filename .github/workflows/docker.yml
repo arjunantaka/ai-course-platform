@@ -65,6 +65,7 @@ jobs:
 
           docker run -d --name kras \
             -p 3901:3000 \
+            -e HOST=0.0.0.0 \
             -e ADMIN_TOKEN=ci-smoke \
             -e DB_PATH=/app/data/krascourse.db \
             -e ORIGIN=http://127.0.0.1:3901 \
