@@ -1,27 +1,61 @@
+# Dependensi
 node_modules
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+bun.lockb
 
-# Output
-.output
+# Output build dan tooling
+/.svelte-kit
+/build
+/.output
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
+.vite
+.cache
 
-# OS
-.DS_Store
-Thumbs.db
+# Vite: berkas timestamp saat config ditulis ulang
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
-# Env
+# Env: rahasia tidak pernah masuk repo, contoh tetap ikut
 .env
 .env.*
 !.env.example
 !.env.test
 
-# Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
-
-# Database SQLite KrasCourse
-data
+# Database SQLite KrasCourse dan artefak smoke
+/data/
 .smoke.db
+
+# Hasil test dan coverage
+coverage
+test-results
+
+# Log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-error.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# Prototipe HTML eksplorasi desain (bukan bagian aplikasi)
+/prototypes/

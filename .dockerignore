@@ -1,8 +1,19 @@
+# Dependensi dan output lokal: dibangun ulang di dalam image
 node_modules
-data
-.env
 build
 .svelte-kit
+
+# Rahasia dan data runtime lokal: dipasang lewat env/VOLUME saat run
+.env
+data
+
+# Metadata repo dan berkas Docker sendiri: tidak dibutuhkan build
 .git
 Dockerfile
 .dockerignore
+
+# Bukan bagian aplikasi: prototipe desain, dokumentasi audit, smoke script host
+# (tests/ sengaja TIDAK diabaikan: tes dijalankan dari konteks image bila perlu)
+prototypes
+anti-slop
+scripts
