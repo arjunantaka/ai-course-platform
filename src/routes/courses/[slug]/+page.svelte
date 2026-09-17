@@ -30,7 +30,7 @@
 </svelte:head>
 
 <div
-	class="overflow-hidden rounded-md border-[9px] border-[color:var(--color-frame)] shadow-[0_24px_48px_-24px_rgba(22,49,41,0.45)]"
+	class="overflow-hidden rounded border-[9px] border-[color:var(--color-frame)] shadow-[0_24px_48px_-24px_rgba(22,49,41,0.45)]"
 >
 	<div class="board p-6 sm:p-10">
 		<p class="font-mono text-[11px] uppercase tracking-wide text-chalk-dim">
@@ -171,7 +171,7 @@
 								? 'text-zinc-500'
 								: 'text-zinc-700 hover:text-teal-700'}"
 						>
-							{lesson.title}
+							{lesson.title}{#if done}<span class="sr-only">, selesai</span>{/if}
 						</a>
 						<span class="font-mono text-[10.5px] text-zinc-500">
 							{lesson.readingMinutes} menit

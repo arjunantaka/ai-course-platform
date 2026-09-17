@@ -15,9 +15,9 @@
 	<title>KrasCourse · belajar tanpa akun</title>
 </svelte:head>
 
-<section class="py-12 md:py-16">
+<section class="py-4 md:py-6">
 	<div
-		class="board rounded-md border-[9px] border-[color:var(--color-frame)] p-6 shadow-[0_24px_48px_-24px_rgba(22,49,41,0.45)] sm:p-10 md:p-12"
+		class="board border-[9px] border-[color:var(--color-frame)] p-6 shadow-[0_24px_48px_-24px_rgba(22,49,41,0.45)] sm:p-10 md:p-12"
 	>
 		<h1
 			class="max-w-[17ch] text-balance text-3xl font-extrabold leading-[1.12] tracking-tight text-chalk sm:text-4xl md:text-5xl"
@@ -53,7 +53,7 @@
 
 	{#if data.latest.length === 0}
 		<p
-			class="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500"
+			class="rounded-xl border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500"
 		>
 			Kursus pertama sedang disiapkan. Kembali lagi sebentar lagi.
 		</p>
@@ -62,7 +62,7 @@
 			{#each data.latest as course, i (course.id)}
 				{#if i === 0}
 					<div class="grid lg:row-span-2">
-						<CourseCard {course} />
+						<CourseCard {course} featured={true} />
 					</div>
 				{:else}
 					<CourseCard {course} />

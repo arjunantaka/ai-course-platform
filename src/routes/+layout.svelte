@@ -50,7 +50,7 @@
 		</nav>
 	</header>
 
-	<main id="konten" class="mx-auto w-full max-w-6xl flex-1 px-6 sm:px-7">
+	<main id="konten" class="mx-auto w-full max-w-6xl flex-1 px-6 py-8 sm:px-7 md:py-10">
 		{@render children()}
 	</main>
 

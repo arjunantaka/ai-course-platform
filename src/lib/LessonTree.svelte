@@ -85,7 +85,7 @@
 									</svg>
 								{/if}
 							</span>
-							<span class="min-w-0">{lesson.title}</span>
+							<span class="min-w-0">{lesson.title}{#if done}<span class="sr-only">, selesai</span>{/if}</span>
 							<span class="font-mono text-[10px] text-zinc-500">{lesson.readingMinutes}m</span>
 						</a>
 					</li>

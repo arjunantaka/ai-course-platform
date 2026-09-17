@@ -51,14 +51,18 @@
 	{#if finished}
 		<div class="mt-8 grid items-center gap-7 md:grid-cols-2">
 			<div
-				class="board rounded-md border-[9px] border-[color:var(--color-frame)] p-8 shadow-[0_24px_48px_-24px_rgba(22,49,41,0.45)]"
+				class="board border-[9px] border-[color:var(--color-frame)] p-8 shadow-[0_24px_48px_-24px_rgba(22,49,41,0.45)]"
 			>
 				<p class="font-mono text-[10.5px] tracking-widest text-chalk-dim">NILAI</p>
 				<p class="mt-2 text-6xl font-extrabold tracking-tight text-chalk tabular-nums sm:text-7xl">
 					{score}<span class="text-3xl font-bold text-chalk-dim">/{data.questions.length}</span>
 				</p>
 				<p class="mt-3 text-[13.5px] text-chalk-dim">
-					Kerja bagus. Skor tersimpan di perangkat Anda.
+					{score === data.questions.length
+						? 'Sempurna. Semua jawaban benar, skor tersimpan di perangkat Anda.'
+						: score >= Math.ceil(data.questions.length / 2)
+							? 'Kerja bagus. Skor tersimpan di perangkat Anda.'
+							: 'Belum lulus. Pelajari kembali materinya, lalu ulangi kuis ini.'}
 				</p>
 			</div>
 

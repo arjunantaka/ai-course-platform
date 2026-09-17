@@ -189,6 +189,11 @@ body {
 	outline-offset: 2px;
 }
 
+/* Fokus di permukaan papan: teal-700 kontrasnya rendah di atas board */
+.board :focus-visible {
+	outline-color: var(--color-chalk);
+}
+
 /* Heading tidak berakhir dengan satu kata yatim di breakpoint sempit */
 h1,
 h2,

@@ -69,7 +69,7 @@ src/
 ├── lib/
 │   ├── CourseCard.svelte, LessonTree.svelte  # komponen UI
 │   ├── progress.svelte.ts                    # store progres (localStorage)
-│   ├── utils.ts                              # coverGradient, label level/status
+│   ├── utils.ts                              # titleInitials, label level/status
 │   └── server/                               # query DB, pipeline AI, markdown
 └── app.css          # Tailwind + tipografi konten + style global
 ```

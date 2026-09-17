@@ -6,7 +6,7 @@
 	let submitting = $state(false);
 
 	const inputClass =
-		'w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-100';
+		'w-full min-h-[44px] rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-100';
 </script>
 
 <svelte:head>
