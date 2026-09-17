@@ -108,7 +108,7 @@
 <div class="flex flex-wrap items-start justify-between gap-4">
 	<div class="min-w-0">
 		<div class="flex items-center gap-3">
-			<h1 class="text-2xl font-extrabold tracking-tight">{data.course.title}</h1>
+			<h1 class="text-2xl font-extrabold tracking-tight text-zinc-900">{data.course.title}</h1>
 			<span class="rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600">
 				{STATUS_LABELS[courseStatus]}
 			</span>
@@ -126,7 +126,7 @@
 				<button
 					onclick={() => courseAction(`/api/admin/courses/${data.course.id}/publish`, 'POST')}
 					disabled={busy !== null}
-					class="rounded-full bg-teal-600 px-4 py-2 text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+					class="inline-flex items-center justify-center rounded-lg bg-teal-700 min-h-[44px] px-5 text-sm font-bold text-white transition-colors hover:bg-teal-800 disabled:opacity-50"
 				>
 					Terbitkan
 				</button>
@@ -134,14 +134,14 @@
 				<button
 					onclick={() => courseAction(`/api/admin/courses/${data.course.id}/unpublish`, 'POST')}
 					disabled={busy !== null}
-					class="rounded-full border border-zinc-300 px-4 py-2 text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+					class="inline-flex items-center justify-center rounded-lg border border-zinc-300 min-h-[44px] px-5 text-sm font-bold text-zinc-500 transition-colors hover:border-teal-700 hover:text-teal-700 disabled:opacity-50"
 				>
 					Jadikan draft
 				</button>
 			{/if}
 			<a
 				href="/admin"
-				class="rounded-full border border-zinc-300 px-4 py-2 text-zinc-700 transition-colors hover:border-zinc-500"
+				class="inline-flex items-center justify-center rounded-lg border border-zinc-300 min-h-[44px] px-5 text-sm font-bold text-zinc-500 transition-colors hover:border-teal-700 hover:text-teal-700"
 			>
 				← Daftar kursus
 			</a>
@@ -154,7 +154,7 @@
 {/if}
 
 {#if courseStatus === 'failed' && courseError}
-	<div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+	<div class="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
 		<p class="font-semibold">Generate gagal</p>
 		<p class="mt-1">{courseError}</p>
 		<p class="mt-2 text-xs text-red-500">
@@ -164,7 +164,7 @@
 {/if}
 
 {#if isGenerating}
-	<section class="mt-10 rounded-2xl border border-zinc-200 bg-white p-10 text-center">
+	<section class="mt-10 rounded-xl border border-zinc-200 bg-white p-10 text-center">
 		<p class="text-sm font-medium text-zinc-500">
 			{courseStatus === 'generating_outline'
 				? 'AI sedang menyusun outline kursus…'
@@ -175,7 +175,7 @@
 				Generate materi: {doneLessons}/{totalLessons} lesson
 			</p>
 			<div class="mx-auto mt-5 h-2 max-w-sm overflow-hidden rounded-full bg-zinc-100">
-				<div class="h-full rounded-full bg-teal-600 transition-all duration-500" style={`width: ${pct}%`}></div>
+				<div class="h-full rounded-full bg-teal-700 transition-all duration-500" style={`width: ${pct}%`}></div>
 			</div>
 		{/if}
 		<p class="mt-4 text-xs text-zinc-500">
@@ -190,7 +190,7 @@
 	</section>
 
 	{#if reviewNotes.length > 0}
-		<details class="mt-4 rounded-2xl border border-zinc-200 bg-white">
+		<details class="mt-4 rounded-xl border border-zinc-200 bg-white">
 			<summary class="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-800">
 				Catatan review AI ({reviewNotes.length} poin ditiadakan)
 			</summary>
@@ -211,7 +211,7 @@
 			<p class="mt-0.5 text-sm text-zinc-500">{mod.summary}</p>
 
 			{#each mod.lessons as lesson (lesson.id)}
-				<details class="mt-3 rounded-2xl border border-zinc-200 bg-white">
+				<details class="mt-3 rounded-xl border border-zinc-200 bg-white">
 					<summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm">
 						<span class="font-semibold text-zinc-800">
 							{lesson.hasContent ? '✓ ' : ''}{lesson.title}
@@ -223,30 +223,30 @@
 							bind:value={lesson.contentMd}
 							rows="16"
 							placeholder="Materi lesson (markdown)"
-							class="w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-xs leading-relaxed focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
+							class="w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-xs leading-relaxed focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-100"
 						></textarea>
 
 						<div class="mt-3 flex flex-wrap items-center gap-3">
 							<button
 								onclick={() => (openPreview[lesson.id] = !openPreview[lesson.id])}
-								class="rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:border-teal-600 hover:text-teal-600"
+								class="inline-flex items-center justify-center rounded-lg border border-zinc-300 min-h-[44px] px-4 text-xs font-semibold text-zinc-500 transition-colors hover:border-teal-700 hover:text-teal-700"
 							>
 								{openPreview[lesson.id] ? 'Sembunyikan preview' : 'Preview'}
 							</button>
 							<button
 								onclick={() => saveLesson(lesson.id, lesson.contentMd ?? '')}
 								disabled={saving[lesson.id]}
-								class="rounded-full bg-teal-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+								class="inline-flex items-center justify-center rounded-lg bg-teal-700 min-h-[44px] px-4 text-xs font-semibold text-white transition-colors hover:bg-teal-800 disabled:opacity-50"
 							>
 								{saving[lesson.id] ? 'Menyimpan…' : 'Simpan'}
 							</button>
 							{#if savedFlash[lesson.id]}
-								<span class="text-xs font-medium text-teal-600">Tersimpan ✓</span>
+								<span class="text-xs font-medium text-teal-700">Tersimpan ✓</span>
 							{/if}
 						</div>
 
 						{#if openPreview[lesson.id]}
-							<div class="prose-custom mt-4 max-h-[32rem] overflow-y-auto rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+							<div class="prose-custom mt-4 max-h-[32rem] overflow-y-auto rounded-xl border border-zinc-200 bg-zinc-50 p-5">
 								<!-- konten admin sendiri; input tepercaya → tanpa sanitize -->
 								{@html marked.parse(lesson.contentMd ?? '', { async: false, gfm: true })}
 							</div>
@@ -256,13 +256,13 @@
 			{/each}
 
 			{#if mod.quizQuestions && mod.quizQuestions.length > 0}
-				<details class="mt-3 rounded-2xl border border-teal-200 bg-teal-50/50">
+				<details class="mt-3 rounded-xl border border-teal-200 bg-teal-50/50">
 					<summary class="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-teal-800">
 						Kuis modul ({mod.quizQuestions.length} soal) · read-only
 					</summary>
 					<div class="space-y-4 border-t border-teal-100 px-4 py-4">
 						{#each mod.quizQuestions as question, qi (qi)}
-							<div class="rounded-2xl bg-white p-4 text-sm">
+							<div class="rounded-xl bg-white p-4 text-sm">
 								<p class="font-semibold text-zinc-800">{qi + 1}. {question.question}</p>
 								<ol class="mt-2 list-decimal space-y-1 pl-5 text-zinc-600">
 									{#each question.options as option, oi (oi)}
@@ -284,7 +284,7 @@
 		<button
 			onclick={() => (pendingDelete = { path: `/api/admin/courses/${data.course.id}` })}
 			disabled={busy !== null}
-			class="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+			class="inline-flex items-center justify-center rounded-lg border border-red-200 min-h-[44px] px-4 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
 		>
 			Hapus kursus ini
 		</button>

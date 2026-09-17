@@ -33,8 +33,8 @@ sent to the server.
 ## Project Rules
 
 - UI language is Indonesian. Light mode only (owner decision; no dark toggle).
-- One accent color (teal-600). Real text is zinc-500 minimum for contrast; never use zinc-400 for content.
-- Radius system (see `DESIGN.md`): CTA pill, inputs `rounded-lg`, quiz options `rounded-xl`, cards `rounded-2xl`, badges `rounded-md`.
+- One accent color (teal-700 `#0F766E`; teal-600 fails AA for white text). Real text is zinc-500 minimum for contrast; never use zinc-400 for content.
+- Radius system (see `DESIGN.md`): buttons/inputs/quiz options `rounded-lg`, cards `rounded-xl`, badges `rounded-md`, board surfaces `rounded` + `frame` border.
 - No em dashes in UI text, comments, or docs.
 - No tiny one-expression helper functions; inline them instead.
 - Prefer `Record<status, string>` lookup tables (labels, badge classes) over if/else chains.

@@ -12,9 +12,9 @@
 	<title>{data.lesson.title} · {data.course.title}</title>
 </svelte:head>
 
-<div class="md:flex md:gap-10">
+<div class="grid gap-8 lg:grid-cols-[248px_1fr] lg:gap-12">
 	<!-- mobile: daftar materi collapsible -->
-	<details class="mb-6 rounded-2xl border border-zinc-200 bg-white md:hidden">
+	<details class="rounded-xl border border-zinc-200 bg-white lg:hidden">
 		<summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-800">
 			Daftar materi
 		</summary>
@@ -28,72 +28,65 @@
 		</div>
 	</details>
 
-	<aside class="hidden w-72 shrink-0 md:block">
-		<div class="sticky top-8 max-h-[calc(100vh-5rem)] overflow-y-auto pr-2">
-			<LessonTree
-				slug={data.course.slug}
-				modules={data.modules}
-				currentLessonId={data.lesson.id}
-				totalLessons={data.totalLessons}
-			/>
-		</div>
+	<aside
+		class="sticky top-6 hidden max-h-[calc(100vh-3rem)] self-start overflow-y-auto pr-2 lg:block"
+	>
+		<LessonTree
+			slug={data.course.slug}
+			modules={data.modules}
+			currentLessonId={data.lesson.id}
+			totalLessons={data.totalLessons}
+		/>
 	</aside>
 
-	<article class="min-w-0 flex-1">
-		<nav class="text-xs text-zinc-500">
-			<a href={`/courses/${data.course.slug}`} class="hover:text-teal-600">{data.course.title}</a>
-			<span aria-hidden="true"> / </span>
+	<article class="min-w-0">
+		<div class="flex flex-wrap gap-4 font-mono text-[11px] text-zinc-500">
+			<a
+				href={`/courses/${data.course.slug}`}
+				class="transition-colors hover:text-teal-700"
+			>
+				{data.course.title}
+			</a>
 			<span>{data.lesson.moduleTitle}</span>
-		</nav>
+		</div>
 
-		<h1 class="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">{data.lesson.title}</h1>
-		<p class="mt-1 text-xs text-zinc-500">{data.lesson.readingMinutes} menit baca</p>
+		<h1 class="mt-2 text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl">
+			{data.lesson.title}
+		</h1>
+		<p class="mt-1.5 font-mono text-[11px] text-zinc-500">{data.lesson.readingMinutes} menit baca</p>
 
 		<!-- HTML sudah dirender server-side: marked → sanitize-html -->
 		<div class="prose-custom mt-8">
 			{@html data.html}
 		</div>
 
-		<div class="mt-12 flex flex-wrap items-center gap-3 border-t border-zinc-200 pt-6">
-			<button
-				onclick={() => progress.toggleLesson(data.course.slug, data.lesson.id)}
-				class="rounded-full px-5 py-3 text-sm font-semibold transition active:-translate-y-px {isDone
-					? 'bg-teal-600 text-white hover:bg-teal-700'
-					: 'border border-teal-600 text-teal-700 hover:bg-teal-50'}"
-			>
-				{isDone ? '✓ Selesai · batalkan' : 'Tandai selesai'}
-			</button>
-
-			{#if data.quizModuleId}
-				<a
-					href={`/courses/${data.course.slug}/quiz/${data.quizModuleId}`}
-					class="rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 active:-translate-y-px"
-				>
-					Kerjakan kuis modul
-				</a>
-			{/if}
-		</div>
-
-		<div class="mt-6 flex items-center justify-between gap-4 text-sm">
+		<div class="mt-9 flex flex-wrap items-center justify-between gap-3.5 border-t border-zinc-200 pt-5">
 			{#if data.prev}
 				<a
 					href={`/courses/${data.course.slug}/lessons/${data.prev.id}`}
-					class="min-w-0 max-w-[45%] rounded-2xl border border-zinc-200 bg-white px-4 py-3 transition-colors hover:border-teal-600"
+					class="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-bold text-zinc-500 transition-colors hover:text-teal-700"
 				>
-					<span class="block text-xs text-zinc-500">← Sebelumnya</span>
-					<span class="block truncate font-semibold text-zinc-700">{data.prev.title}</span>
+					<span aria-hidden="true">←</span>
+					<span class="max-w-[22ch] truncate">{data.prev.title}</span>
 				</a>
 			{:else}
 				<span></span>
 			{/if}
 
+			<button
+				onclick={() => progress.toggleLesson(data.course.slug, data.lesson.id)}
+				class="inline-flex min-h-[46px] items-center rounded-lg bg-teal-700 px-6 text-sm font-bold text-white transition-colors duration-150 hover:bg-teal-800"
+			>
+				{isDone ? 'Batalkan tandai selesai' : 'Tandai selesai'}
+			</button>
+
 			{#if data.next}
 				<a
 					href={`/courses/${data.course.slug}/lessons/${data.next.id}`}
-					class="min-w-0 max-w-[45%] rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-right transition-colors hover:border-teal-600"
+					class="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-bold text-zinc-500 transition-colors hover:text-teal-700"
 				>
-					<span class="block text-xs text-zinc-500">Berikutnya →</span>
-					<span class="block truncate font-semibold text-zinc-700">{data.next.title}</span>
+					<span class="max-w-[22ch] truncate">{data.next.title}</span>
+					<span aria-hidden="true">→</span>
 				</a>
 			{/if}
 		</div>
