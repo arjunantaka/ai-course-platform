@@ -23,6 +23,9 @@ for _ in $(seq 1 40); do curl -sf "$BASE/" >/dev/null && break; sleep 0.5; done
 # 1) admin auth gate: tanpa cookie → 303 ke /admin/login
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/admin")" = "303" ]
 
+# 1b) bypass percent-encoding tetap ter-guard: /%61dmin = /admin setelah decode kit
+[ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/%61dmin")" = "303" ]
+
 # 2) login CSRF + token: token salah → action failure 400 di body; benar → cookie terpasang
 LOGIN_BAD=$(curl -s -H "Origin: $BASE" -X POST "$BASE/admin/login" -d 'token=nope')
 echo "$LOGIN_BAD" | grep -q '"status":400'
