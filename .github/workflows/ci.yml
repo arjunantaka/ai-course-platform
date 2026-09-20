@@ -10,9 +10,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2      
+          bun-version: 1.4.2
+
       - name: Install depensi
         run: bun install --frozen-lockfile
 
       - name: Typecheck
         run: bun run check
+
+      - name: Unit testing
+        run: bun run test:unit
